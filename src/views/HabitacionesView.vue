@@ -1,329 +1,648 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import api from '../services/api';
+import { computed, ref } from 'vue';
+import {
+  BedDouble,
+  Search,
+  SlidersHorizontal,
+  Users,
+  BadgeDollarSign,
+  DoorOpen,
+} from 'lucide-vue-next';
 
-const habitaciones = ref<any[]>([]);
-const buscar = ref('');
-const estado = ref('');
-const cargando = ref(false);
+type EstadoHabitacion = 'LIBRE' | 'OCUPADO' | 'MANTENIMIENTO' | 'LIMPIEZA';
 
-const cargarHabitaciones = async () => {
-  try {
-    cargando.value = true;
+interface Habitacion {
+  id: number;
+  numero: string;
+  tipo: string;
+  capacidad: number;
+  precio: number;
+  estado: EstadoHabitacion;
+  detalle: string;
+}
 
-    const response = await api.get('/habitaciones', {
-      params: {
-        buscar: buscar.value,
-        estado_habitacion: estado.value,
-      },
-    });
+const searchTerm = ref('');
+const selectedEstado = ref<EstadoHabitacion | 'TODOS'>('TODOS');
 
-    habitaciones.value = response.data.data.data;
-  } catch (error) {
-    console.error('Error al cargar habitaciones:', error);
-  } finally {
-    cargando.value = false;
-  }
-};
+const habitaciones = ref<Habitacion[]>([
+  {
+    id: 1,
+    numero: '101',
+    tipo: 'Simple',
+    capacidad: 1,
+    precio: 180,
+    estado: 'LIBRE',
+    detalle: 'Habitación individual disponible para hospedaje.',
+  },
+  {
+    id: 2,
+    numero: '102',
+    tipo: 'Doble',
+    capacidad: 2,
+    precio: 260,
+    estado: 'OCUPADO',
+    detalle: 'Habitación doble actualmente ocupada.',
+  },
+  {
+    id: 3,
+    numero: '201',
+    tipo: 'Matrimonial',
+    capacidad: 2,
+    precio: 320,
+    estado: 'LIMPIEZA',
+    detalle: 'Habitación en proceso de limpieza.',
+  },
+  {
+    id: 4,
+    numero: '202',
+    tipo: 'Familiar',
+    capacidad: 4,
+    precio: 450,
+    estado: 'MANTENIMIENTO',
+    detalle: 'Habitación temporalmente fuera de servicio.',
+  },
+  {
+    id: 5,
+    numero: '301',
+    tipo: 'Suite',
+    capacidad: 3,
+    precio: 620,
+    estado: 'LIBRE',
+    detalle: 'Suite disponible con mayor comodidad.',
+  },
+  {
+    id: 6,
+    numero: '302',
+    tipo: 'Doble',
+    capacidad: 2,
+    precio: 260,
+    estado: 'OCUPADO',
+    detalle: 'Reserva activa en curso.',
+  },
+]);
 
-onMounted(() => {
-  cargarHabitaciones();
+const estados: Array<{
+  label: EstadoHabitacion | 'TODOS';
+  text: string;
+}> = [
+  { label: 'TODOS', text: 'Todos' },
+  { label: 'LIBRE', text: 'Libre' },
+  { label: 'OCUPADO', text: 'Ocupado' },
+  { label: 'MANTENIMIENTO', text: 'Mantenimiento' },
+  { label: 'LIMPIEZA', text: 'Limpieza' },
+];
+
+const filteredHabitaciones = computed(() => {
+  const term = searchTerm.value.trim().toLowerCase();
+
+  return habitaciones.value.filter((habitacion) => {
+    const matchesSearch =
+      habitacion.numero.toLowerCase().includes(term) ||
+      habitacion.tipo.toLowerCase().includes(term) ||
+      habitacion.estado.toLowerCase().includes(term);
+
+    const matchesEstado =
+      selectedEstado.value === 'TODOS' ||
+      habitacion.estado === selectedEstado.value;
+
+    return matchesSearch && matchesEstado;
+  });
 });
+
+const getEstadoClass = (estado: EstadoHabitacion) => {
+  return {
+    LIBRE: 'status-libre',
+    OCUPADO: 'status-ocupado',
+    MANTENIMIENTO: 'status-mantenimiento',
+    LIMPIEZA: 'status-limpieza',
+  }[estado];
+};
 </script>
 
 <template>
-  <section class="habitaciones">
-    <div class="top-row">
-      <h1>HABITACIONES</h1>
+  <section class="habitaciones-view">
+    <header class="page-header">
+      <div>
+        <p class="page-label">Gestión hotelera</p>
+        <h1>Habitaciones</h1>
+        <p class="page-description">
+          Control visual de habitaciones, disponibilidad, capacidad, precios y estados operativos.
+        </p>
+      </div>
+    </header>
 
-      <div class="search-panel">
-        <span class="search-icon">⌕</span>
+    <section class="toolbar">
+      <form class="input-group" @submit.prevent>
+        <div class="input-wrapper">
+          <Search :size="19" class="search-icon" />
+          <input
+            v-model="searchTerm"
+            type="text"
+            class="input"
+            placeholder="Buscar habitación..."
+            autocomplete="off"
+          />
+        </div>
 
-        <input
-          v-model="buscar"
-          type="text"
-          placeholder="BUSCADOR......"
-          @input="cargarHabitaciones"
-        />
+        <button class="button--submit" type="submit">
+          Buscar
+        </button>
+      </form>
 
-        <span class="filter-icon">▽</span>
-
-        <select v-model="estado" @change="cargarHabitaciones">
-          <option value="">FILTRAR</option>
-          <option value="libre">LIBRE</option>
-          <option value="ocupada">OCUPADO</option>
-          <option value="mantenimiento">MANTENIMIENTO</option>
-          <option value="reservada">LIMPIEZA</option>
+      <div class="filter-box">
+        <SlidersHorizontal :size="18" />
+        <select v-model="selectedEstado">
+          <option
+            v-for="estado in estados"
+            :key="estado.label"
+            :value="estado.label"
+          >
+            {{ estado.text }}
+          </option>
         </select>
       </div>
-    </div>
+    </section>
 
-    <div class="legend">
-      <span class="legend-title">ESTADO</span>
+    <section class="status-legend">
+      <span class="legend-title">Estado</span>
 
-      <span class="legend-pill">
-        <b class="dot libre"></b>
-        LIBRE
-      </span>
-
-      <span class="legend-pill">
-        <b class="dot ocupada"></b>
-        OCUPADO
-      </span>
-
-      <span class="legend-pill">
-        <b class="dot mantenimiento"></b>
-        MANTENIMIENTO
-      </span>
-
-      <span class="legend-pill">
-        <b class="dot limpieza"></b>
-        LIMPIEZA
-      </span>
-    </div>
-
-    <div class="grid">
-      <article
-        v-for="habitacion in habitaciones"
-        :key="habitacion.id"
-        class="room-card"
+      <button
+        v-for="estado in estados.filter((item) => item.label !== 'TODOS')"
+        :key="estado.label"
+        type="button"
+        class="legend-chip"
+        :class="[
+          getEstadoClass(estado.label as EstadoHabitacion),
+          { active: selectedEstado === estado.label }
+        ]"
+        @click="selectedEstado = estado.label"
       >
+        <span class="legend-dot"></span>
+        {{ estado.text }}
+      </button>
+    </section>
+
+    <section class="rooms-grid">
+      <article
+        v-for="habitacion in filteredHabitaciones"
+        :key="habitacion.id"
+        class="e-card playing"
+      >
+        <div class="wave" :class="getEstadoClass(habitacion.estado)"></div>
+        <div class="wave" :class="getEstadoClass(habitacion.estado)"></div>
+        <div class="wave" :class="getEstadoClass(habitacion.estado)"></div>
+
         <div class="room-content">
-          <h2>Hab. {{ habitacion.numero }}</h2>
-          <p>{{ habitacion.tipo }}</p>
-          <p>Bs. {{ habitacion.precio_noche }}</p>
-          <span :class="['state', habitacion.estado_habitacion]">
-            {{ habitacion.estado_habitacion }}
-          </span>
+          <div class="room-top">
+            <div class="room-icon">
+              <BedDouble :size="38" />
+            </div>
+
+            <span class="room-status" :class="getEstadoClass(habitacion.estado)">
+              {{ habitacion.estado }}
+            </span>
+          </div>
+
+          <div class="room-main">
+            <p class="room-number">Hab. {{ habitacion.numero }}</p>
+            <h2>{{ habitacion.tipo }}</h2>
+            <p class="room-detail">{{ habitacion.detalle }}</p>
+          </div>
+
+          <div class="room-info">
+            <div>
+              <Users :size="17" />
+              <span>{{ habitacion.capacidad }} pers.</span>
+            </div>
+
+            <div>
+              <BadgeDollarSign :size="17" />
+              <span>Bs. {{ habitacion.precio }}</span>
+            </div>
+          </div>
+
+          <button type="button" class="room-action">
+            <DoorOpen :size="17" />
+            Ver detalle
+          </button>
         </div>
       </article>
+    </section>
 
-      <article
-        v-for="n in Math.max(0, 12 - habitaciones.length)"
-        :key="'empty-' + n"
-        class="room-card empty-card"
-      ></article>
-    </div>
-
-    <div class="pagination">
-      <button>←</button>
-      <span>PAGINA 1</span>
-      <button>→</button>
+    <div v-if="filteredHabitaciones.length === 0" class="empty-state">
+      No se encontraron habitaciones con los filtros seleccionados.
     </div>
   </section>
 </template>
 
 <style scoped>
-.habitaciones {
+.habitaciones-view {
   width: 100%;
-}
-
-.top-row {
+  min-width: 0;
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-h1 {
-  background: #2f343d;
-  color: white;
-  padding: 11px 10px;
-  border-radius: 10px;
-  font-size: 18px;
-  font-weight: 900;
-  margin: 0;
-  height: 44px;
-  display: flex;
-  align-items: center;
-}
-
-.search-panel {
-  height: 44px;
-  flex: 1;
-  background: #eef1f2;
-  border-radius: 5px;
-  display: grid;
-  grid-template-columns: 38px 1fr 38px 130px;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 8px;
-}
-
-.search-icon {
-  font-size: 34px;
-  color: #111;
-  line-height: 1;
-  transform: rotate(-20deg);
-}
-
-.filter-icon {
-  font-size: 35px;
-  color: #111;
-  line-height: 1;
-  transform: rotate(180deg);
-}
-
-input,
-select {
-  height: 31px;
-  border: none;
-  background: #b9b9b9;
-  border-radius: 4px;
-  outline: none;
-  text-align: center;
-  font-size: 9px;
-  color: #111;
-}
-
-select {
-  appearance: none;
-  font-size: 10px;
-}
-
-.legend {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 11px;
-  flex-wrap: wrap;
-}
-
-.legend-title,
-.legend-pill {
-  height: 25px;
-  background: #2f343d;
-  color: white;
-  border-radius: 10px;
-  padding: 0 7px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.legend-pill {
-  padding-right: 12px;
-}
-
-.dot {
-  width: 17px;
-  height: 17px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.libre {
-  background: #06972c;
-}
-
-.ocupada {
-  background: #d6d606;
-}
-
-.mantenimiento {
-  background: #1c62cf;
-}
-
-.limpieza {
-  background: #36d997;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 7px 17px;
-  padding-right: 8px;
-}
-
-.room-card {
-  height: 75px;
-  background: #2f343d;
-  border-radius: 8px;
-  color: white;
-  padding: 8px;
-  overflow: hidden;
-}
-
-.room-content h2 {
-  margin: 0 0 4px 0;
-  font-size: 13px;
-}
-
-.room-content p {
-  margin: 2px 0;
-  font-size: 10px;
-}
-
-.state {
-  display: inline-block;
-  margin-top: 4px;
-  padding: 3px 6px;
-  border-radius: 8px;
-  font-size: 8px;
-  text-transform: uppercase;
-  font-weight: bold;
-}
-
-.state.libre {
-  background: #06972c;
-}
-
-.state.ocupada {
-  background: #c4c400;
-}
-
-.state.mantenimiento {
-  background: #1c62cf;
-}
-
-.state.reservada {
-  background: #36d997;
-}
-
-.empty-card {
-  min-height: 75px;
-}
-
-.pagination {
-  margin-top: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   gap: 22px;
 }
 
-.pagination button {
-  background: transparent;
-  border: none;
-  font-size: 28px;
-  font-weight: 900;
-  cursor: pointer;
-  color: black;
-  line-height: 1;
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
 }
 
-.pagination span {
-  width: 106px;
-  height: 19px;
-  background: #8b908a;
-  color: white;
-  border-radius: 15px;
-  font-size: 11px;
-  font-weight: 900;
+.page-label {
+  margin: 0 0 6px;
+  color: #93c5fd;
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.page-header h1 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 2rem;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.page-description {
+  margin: 10px 0 0;
+  max-width: 760px;
+  color: #94a3b8;
+  font-size: 0.96rem;
+  line-height: 1.55;
+}
+
+.toolbar {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) 220px;
+  gap: 14px;
+  align-items: center;
+}
+
+.input-group {
+  width: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
 }
 
-@media (min-width: 1200px) {
-  .room-card {
-    height: 105px;
+.input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.search-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+}
+
+.input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 1rem 0 2.8rem;
+  color: #f8fafc;
+  font-size: 15px;
+  border: 1px solid #334155;
+  border-radius: 10px 0 0 10px;
+  background-color: #111827;
+}
+
+.button--submit {
+  min-height: 50px;
+  padding: 0.5em 1.2em;
+  border: none;
+  border-radius: 0 10px 10px 0;
+  background-color: #2563eb;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.button--submit:hover {
+  background-color: #1d4ed8;
+}
+
+.input:focus,
+.input:focus-visible {
+  border-color: #3898ec;
+  outline: none;
+}
+
+.filter-box {
+  min-height: 50px;
+  padding: 0 14px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #111827;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-box svg {
+  color: #93c5fd;
+}
+
+.filter-box select {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #f8fafc;
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.status-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.legend-title {
+  color: #f8fafc;
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.legend-chip {
+  border: 1px solid #334155;
+  border-radius: 999px;
+  background: #111827;
+  color: #cbd5e1;
+  padding: 7px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.legend-chip.active {
+  border-color: currentColor;
+  background: #1e293b;
+}
+
+.legend-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.rooms-grid {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+.e-card {
+  background: transparent;
+  box-shadow: 0px 8px 28px -9px rgba(0, 0, 0, 0.65);
+  position: relative;
+  width: 100%;
+  min-height: 330px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #253044;
+}
+
+.wave {
+  position: absolute;
+  width: 540px;
+  height: 700px;
+  opacity: 0.6;
+  left: 0;
+  top: 0;
+  margin-left: -50%;
+  margin-top: -72%;
+  background: linear-gradient(744deg, #00ff80, #009933 60%, #00cc44);
+  border-radius: 40%;
+  animation: wave 55s infinite linear;
+}
+
+.wave:nth-child(2),
+.wave:nth-child(3) {
+  top: 210px;
+}
+
+.playing .wave {
+  animation: wave 3000ms infinite linear;
+}
+
+.playing .wave:nth-child(2) {
+  animation-duration: 4000ms;
+}
+
+.playing .wave:nth-child(3) {
+  animation-duration: 5000ms;
+}
+
+.wave.status-libre {
+  background: linear-gradient(744deg, #22c55e, #15803d 60%, #86efac);
+}
+
+.wave.status-ocupado {
+  background: linear-gradient(744deg, #facc15, #ca8a04 60%, #fde047);
+}
+
+.wave.status-mantenimiento {
+  background: linear-gradient(744deg, #60a5fa, #1d4ed8 60%, #93c5fd);
+}
+
+.wave.status-limpieza {
+  background: linear-gradient(744deg, #2dd4bf, #0f766e 60%, #99f6e4);
+}
+
+.room-content {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  min-height: 330px;
+  padding: 22px;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.2),
+    rgba(15, 23, 42, 0.68)
+  );
+}
+
+.room-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.room-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  background: rgba(15, 23, 42, 0.38);
+  backdrop-filter: blur(8px);
+}
+
+.room-status {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.45);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.room-status.status-libre {
+  color: #bbf7d0;
+}
+
+.room-status.status-ocupado {
+  color: #fef08a;
+}
+
+.room-status.status-mantenimiento {
+  color: #bfdbfe;
+}
+
+.room-status.status-limpieza {
+  color: #99f6e4;
+}
+
+.room-main {
+  text-align: left;
+}
+
+.room-number {
+  margin: 0 0 5px;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.room-main h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.8rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.room-detail {
+  margin: 10px 0 0;
+  color: #dbeafe;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.room-info {
+  display: grid;
+  gap: 8px;
+}
+
+.room-info div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f8fafc;
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.room-action {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  padding: 11px 14px;
+  background: rgba(15, 23, 42, 0.45);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 850;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.room-action:hover {
+  background: rgba(15, 23, 42, 0.7);
+  transform: translateY(-1px);
+}
+
+.empty-state {
+  padding: 24px;
+  border: 1px dashed #334155;
+  border-radius: 16px;
+  color: #94a3b8;
+  text-align: center;
+  background: #111827;
+}
+
+.status-libre {
+  color: #22c55e;
+}
+
+.status-ocupado {
+  color: #eab308;
+}
+
+.status-mantenimiento {
+  color: #3b82f6;
+}
+
+.status-limpieza {
+  color: #14b8a6;
+}
+
+@keyframes wave {
+  0% {
+    transform: rotate(0deg);
   }
 
-  .grid {
-    gap: 14px 24px;
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 900px) {
+  .toolbar {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .rooms-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header h1 {
+    font-size: 1.6rem;
   }
 }
 </style>

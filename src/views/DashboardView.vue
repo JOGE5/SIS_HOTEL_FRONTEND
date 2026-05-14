@@ -1,241 +1,344 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import HabitacionesView from './HabitacionesView.vue';
+import {
+  BedDouble,
+  Users,
+  CalendarCheck,
+  Utensils,
+} from 'lucide-vue-next';
 
-const emit = defineEmits<{
-  logout: [];
-}>();
-
-const vistaActual = ref('habitaciones');
+const modules = [
+  {
+    title: 'Habitaciones',
+    description: 'Control de disponibilidad, ocupación y estado de habitaciones.',
+    icon: BedDouble,
+    tag: 'Gestión hotelera',
+  },
+  {
+    title: 'Huéspedes',
+    description: 'Registro y administración de huéspedes activos del hotel.',
+    icon: Users,
+    tag: 'Clientes',
+  },
+  {
+    title: 'Reservaciones',
+    description: 'Seguimiento de reservas, entradas, salidas y estadías.',
+    icon: CalendarCheck,
+    tag: 'Reservas',
+  },
+  {
+    title: 'Platos',
+    description: 'Gestión gastronómica, platos disponibles y servicios del restaurante.',
+    icon: Utensils,
+    tag: 'Gastronomía',
+  },
+];
 </script>
 
 <template>
-  <main class="app-layout">
-    <aside class="sidebar">
-      <div class="logo">
-        <img src="/images/logo-lamansion.png" alt="Hotel Club Campestre La Mansión" />
-      </div>
+  <section class="dashboard-view">
+    <header class="dashboard-header">
+      <p class="dashboard-label">Panel principal</p>
+      <h1>Dashboard</h1>
+      <p class="dashboard-description">
+        Resumen general del sistema de gestión hotelera del Hotel Club Campestre La Mansión.
+      </p>
+    </header>
 
-      <nav class="menu">
-        <button
-          :class="{ active: vistaActual === 'reservas' }"
-          @click="vistaActual = 'reservas'"
+    <section class="cards-wrapper">
+      <div class="cards-grid">
+        <article
+          v-for="module in modules"
+          :key="module.title"
+          class="dashboard-card"
         >
-          <span class="icon">▱</span>
-          <span>RESERVAS</span>
-        </button>
+          <div class="card-top">
+            <div class="card-icon">
+              <component :is="module.icon" :size="26" />
+            </div>
 
-        <button
-          :class="{ active: vistaActual === 'huespedes' }"
-          @click="vistaActual = 'huespedes'"
-        >
-          <span class="icon">♙</span>
-          <span>HUÉSPEDES</span>
-        </button>
-
-        <button
-          :class="{ active: vistaActual === 'habitaciones' }"
-          @click="vistaActual = 'habitaciones'"
-        >
-          <span class="icon">▰</span>
-          <span>HABITACIONES</span>
-        </button>
-
-        <button
-          :class="{ active: vistaActual === 'platos' }"
-          @click="vistaActual = 'platos'"
-        >
-          <span class="icon">▤</span>
-          <span>PLATOS</span>
-        </button>
-
-        <button
-          :class="{ active: vistaActual === 'informes' }"
-          @click="vistaActual = 'informes'"
-        >
-          <span class="icon">▟</span>
-          <span>INFORMES</span>
-        </button>
-      </nav>
-
-      <div class="bottom-area">
-        <div class="user-box">
-          <div class="avatar"></div>
-          <div>
-            <strong>USER NAME</strong>
-            <span>ROL</span>
+            <span class="card-tag">
+              {{ module.tag }}
+            </span>
           </div>
-        </div>
 
-        <button class="config">
-          <span class="config-icon">⚙</span>
-          CONFIGURACIÓN
-        </button>
-
-        <button class="logout" @click="emit('logout')">
-          SALIR
-        </button>
-      </div>
-    </aside>
-
-    <section class="content">
-      <HabitacionesView v-if="vistaActual === 'habitaciones'" />
-
-      <div v-else class="placeholder">
-        <h1>{{ vistaActual.toUpperCase() }}</h1>
-        <p>Vista pendiente.</p>
+          <div>
+            <h2>{{ module.title }}</h2>
+            <p>{{ module.description }}</p>
+          </div>
+        </article>
       </div>
     </section>
-  </main>
+
+    <section class="dashboard-panels">
+      <article class="panel">
+        <p class="panel-label">Resumen operativo</p>
+        <h2>Estado general</h2>
+
+        <div class="summary-list">
+          <div class="summary-item">
+            <span>Ocupación estimada</span>
+            <strong>75%</strong>
+          </div>
+
+          <div class="summary-item">
+            <span>Check-ins de hoy</span>
+            <strong>8</strong>
+          </div>
+
+          <div class="summary-item">
+            <span>Check-outs de hoy</span>
+            <strong>5</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <p class="panel-label">Accesos rápidos</p>
+        <h2>Operaciones frecuentes</h2>
+
+        <div class="quick-actions">
+          <button type="button">Ver habitaciones</button>
+          <button type="button">Nueva reservación</button>
+          <button type="button">Registrar huésped</button>
+          <button type="button">Ver reportes</button>
+        </div>
+      </article>
+    </section>
+  </section>
 </template>
 
 <style scoped>
-.app-layout {
-  min-height: 100vh;
-  display: flex;
-  background: #cbb99f;
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-.sidebar {
-  width: 230px;
-  min-width: 230px;
-  background: #2f343d;
-  color: white;
+.dashboard-view {
+  width: 100%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  border-right: 4px solid #7b38ff;
-  padding-top: 22px;
+  gap: 28px;
 }
 
-.logo {
+.dashboard-header {
   width: 100%;
-  height: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 18px;
-  margin-bottom: 30px;
+  min-width: 0;
 }
 
-.logo img {
+.dashboard-label {
+  margin: 0 0 6px;
+  color: #166534;
+  font-size: 0.8rem;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  color: #111827;
+  font-size: 2rem;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.dashboard-description {
+  margin: 10px 0 0;
+  max-width: 760px;
+  color: #64748b;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.cards-wrapper {
   width: 100%;
-  max-width: 180px;
-  object-fit: contain;
+  min-width: 0;
 }
 
-.menu {
+.cards-grid {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 24px;
+}
+
+.dashboard-card {
+  min-width: 0;
+  min-height: 185px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  justify-content: space-between;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.menu button {
-  height: 36px;
-  width: 215px;
-  background: #8b908a;
-  color: white;
-  border: none;
-  border-radius: 0 8px 8px 0;
+.dashboard-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.12);
+}
+
+.card-top {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 12px;
-  font-size: 16px;
-  font-weight: 800;
-  cursor: pointer;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
 }
 
-.menu button.active {
-  background: #8b908a;
+.card-icon {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: #dcfce7;
+  color: #166534;
 }
 
-.menu button:hover {
-  background: #777d77;
-}
-
-.icon {
-  width: 28px;
-  color: black;
-  font-size: 22px;
-  font-weight: bold;
+.card-tag {
+  max-width: 130px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.76rem;
+  font-weight: 850;
+  line-height: 1.1;
   text-align: center;
 }
 
-.bottom-area {
-  margin-top: auto;
-  padding-bottom: 18px;
+.dashboard-card h2 {
+  margin: 0 0 9px;
+  color: #111827;
+  font-size: 1.22rem;
+  font-weight: 850;
+  line-height: 1.2;
 }
 
-.user-box {
-  width: 185px;
-  height: 48px;
-  background: #8b908a;
-  border-radius: 0 20px 20px 0;
+.dashboard-card p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.dashboard-panels {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+  gap: 24px;
+}
+
+.panel {
+  min-width: 0;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 26px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.panel-label {
+  margin: 0 0 6px;
+  color: #166534;
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.panel h2 {
+  margin: 0 0 20px;
+  color: #111827;
+  font-size: 1.22rem;
+  font-weight: 850;
+}
+
+.summary-list {
+  display: grid;
+  gap: 14px;
+}
+
+.summary-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  margin-bottom: 16px;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
 }
 
-.avatar {
-  width: 34px;
-  height: 34px;
-  background: black;
-  border-radius: 50%;
-  border: 3px solid #111;
+.summary-item span {
+  color: #475569;
+  font-size: 0.95rem;
 }
 
-.user-box div:last-child {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+.summary-item strong {
+  color: #111827;
+  font-size: 1.05rem;
 }
 
-.user-box strong,
-.user-box span {
-  font-size: 10px;
-  font-weight: 500;
+.quick-actions {
+  display: grid;
+  gap: 12px;
 }
 
-.config,
-.logout {
-  width: 185px;
-  height: 34px;
-  background: #8b908a;
-  color: white;
-  border: none;
-  border-radius: 0 8px 8px 0;
-  font-size: 13px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-left: 18px;
+.quick-actions button {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #111827;
+  padding: 15px 18px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
-.config-icon {
-  color: black;
-  font-size: 17px;
+.quick-actions button:hover {
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+  transform: translateY(-1px);
 }
 
-.logout {
-  margin-top: 10px;
-  background: #7b3939;
+@media (max-width: 1200px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, minmax(230px, 1fr));
+  }
 }
 
-.content {
-  flex: 1;
-  background: #cbb99f;
-  padding: 34px 14px 20px 14px;
-  overflow: auto;
+@media (max-width: 950px) {
+  .dashboard-panels {
+    grid-template-columns: 1fr;
+  }
 }
 
-.placeholder {
-  background: #2f343d;
-  color: white;
-  padding: 30px;
-  border-radius: 12px;
+@media (max-width: 620px) {
+  .dashboard-header h1 {
+    font-size: 1.65rem;
+  }
+
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-card,
+  .panel {
+    padding: 20px;
+  }
+
+  .card-top {
+    flex-direction: column;
+  }
+
+  .card-tag {
+    max-width: 100%;
+  }
 }
 </style>
